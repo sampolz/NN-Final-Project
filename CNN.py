@@ -1,6 +1,7 @@
 import os
 import cv2
 import tensorflow
+import random
 import numpy as np
 import pandas as pd
 import seaborn as sns
@@ -33,9 +34,9 @@ data = pd.DataFrame({'Image_Path': data, 'labels': data_labels})
 print(data) # Display the DataFrame
 
 # Function to display images
-def display_images(data_dir, categories, num_images=10):
+def display_images(data_dir, categories, num_images=5):
     # Set up the plot grid (2 rows and 5 columns, change if needed)
-    fig, axes = plt.subplots(len(categories), num_images, figsize=(20, len(categories)*2))
+    fig, axes = plt.subplots(len(categories), num_images, figsize=(10, len(categories)*2))
     
     # Loop through each category
     for i, category in enumerate(categories):
