@@ -1,18 +1,20 @@
 import os
 import cv2
-import tensorflow
+import tensorflow as tf
 import random
 import numpy as np
 import pandas as pd
 import seaborn as sns
 import matplotlib.pyplot as plt
 from tensorflow.keras.preprocessing.image import ImageDataGenerator
-from tensorflow.keras.applications import VGG16, Xception, InceptionResNetV2, ResNet50V2
 from tensorflow.keras.models import Model
 from tensorflow.keras.layers import Dense, GlobalAveragePooling2D
 from tensorflow.keras.callbacks import EarlyStopping, ModelCheckpoint, ReduceLROnPlateau
 from tensorflow.keras.optimizers import Adam
+from tensorflow.keras.models import Sequential
+from tensorflow.keras.layers import Conv2D, MaxPooling2D, Flatten, Dense, Dropout, BatchNormalization
 from sklearn.utils.class_weight import compute_class_weight
+from sklearn.model_selection import train_test_split
 from sklearn.metrics import classification_report, confusion_matrix
 
 
@@ -63,5 +65,82 @@ def display_images(data_dir, categories, num_images=5):
     plt.tight_layout()  # Adjust spacing for better readability
     plt.show()
 
+
 # Call the function to display images
-display_images(data_dir, categories)
+# display_images(data_dir, categories)
+    
+
+# Set image and batch size for training
+img_size = (75, 75)
+batch_size = 32
+
+# Map the category labels to a numerical index
+label_map = {label: idx for idx, label in enumerate(categories)}
+data['label_idx'] = data['labels'].map(label_map)
+
+# Split into training and validation set with 80/20 split
+train_df, val_df = train_test_split(data, test_size=0.2, stratify=data['label_idx'], random_state=42)
+
+# Function to load and preprocess a single image from the file path
+def load_image(img_path, label):
+    img = tf.io.read_file(img_path)
+    img = tf.image.decode_jpeg(img, channels=3)
+    img = tf.image.resize(img, img_size)
+    img = img / 255.0
+    return img, tf.one_hot(label, depth=len(categories))
+
+# tf dataset from dataframe
+def create_dataset(df):
+    paths = df['Image_Path'].values
+    labels = df['label_idx'].values
+    dataset = tf.data.Dataset.from_tensor_slices((paths, labels))
+    dataset = dataset.map(load_image, num_parallel_calls=tf.data.AUTOTUNE)
+    return dataset
+
+# Prepare training data by random shuffling, batching into groups of 32, and prefetching the batches for performacne
+train_ds = create_dataset(train_df).shuffle(1000).batch(32).prefetch(tf.data.AUTOTUNE)
+# Create and prepare validation dataset with no shuffling, to preserve the evaluation considency. 
+val_ds = create_dataset(val_df).batch(32).prefetch(tf.data.AUTOTUNE)
+
+
+
+# Model Architecture
+model = Sequential([
+    Conv2D(32, (3, 3), activation='relu', input_shape=(75, 75, 3)),
+    MaxPooling2D(pool_size=(2, 2)),
+    BatchNormalization(),
+
+    Conv2D(64, (3, 3), activation='relu'),
+    MaxPooling2D(pool_size=(2, 2)),
+    BatchNormalization(),
+
+    Conv2D(128, (3, 3), activation='relu'),
+    MaxPooling2D(pool_size=(2, 2)),
+    BatchNormalization(),
+
+    Flatten(),
+    Dense(128, activation='relu'),
+    Dropout(0.5),
+    Dense(len(categories), activation='softmax')  # 4 classes
+])
+
+# Compile model
+model.compile(
+    optimizer=Adam(),
+    loss='categorical_crossentropy',
+    metrics=['accuracy']
+)
+
+# Train
+history = model.fit(
+    train_ds,
+    validation_data=val_ds,
+    epochs=15,
+    callbacks=[
+        EarlyStopping(patience=3, restore_best_weights=True),
+        ReduceLROnPlateau(patience=2)
+    ]
+)
+
+
+
