@@ -1,7 +1,7 @@
 # NN Final Project
 
 Names: 
-    Jack 
-    Jonas
-    Sam
+    Jack, 
+    Jonas,
+    Sam,
     Anderson
