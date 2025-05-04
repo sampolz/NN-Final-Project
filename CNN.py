@@ -67,7 +67,7 @@ def display_images(data_dir, categories, num_images=5):
 
 
 # Call the function to display images
-# display_images(data_dir, categories)
+display_images(data_dir, categories)
     
 
 # Set image and batch size for training
@@ -89,102 +89,102 @@ def load_image(img_path, label):
     img = img / 255.0
     return img, tf.one_hot(label, depth=len(categories))
 
-# tf dataset from dataframe
-def create_dataset(df):
-    paths = df['Image_Path'].values
-    labels = df['label_idx'].values
-    dataset = tf.data.Dataset.from_tensor_slices((paths, labels))
-    dataset = dataset.map(load_image, num_parallel_calls=tf.data.AUTOTUNE)
-    return dataset
+# # tf dataset from dataframe
+# def create_dataset(df):
+#     paths = df['Image_Path'].values
+#     labels = df['label_idx'].values
+#     dataset = tf.data.Dataset.from_tensor_slices((paths, labels))
+#     dataset = dataset.map(load_image, num_parallel_calls=tf.data.AUTOTUNE)
+#     return dataset
 
-# Prepare training data by random shuffling, batching into groups of 32, and prefetching the batches for performacne
-train_ds = create_dataset(train_df).shuffle(1000).batch(32).prefetch(tf.data.AUTOTUNE)
-# Create and prepare validation dataset with no shuffling, to preserve the evaluation considency. 
-val_ds = create_dataset(val_df).batch(32).prefetch(tf.data.AUTOTUNE)
-
-
-
-# Model Architecture
-model = Sequential([
-    Conv2D(32, (3, 3), activation='relu', input_shape=(75, 75, 3)),
-    MaxPooling2D(pool_size=(2, 2)),
-    BatchNormalization(),
-
-    Conv2D(64, (3, 3), activation='relu'),
-    MaxPooling2D(pool_size=(2, 2)),
-    BatchNormalization(),
-
-    Conv2D(128, (3, 3), activation='relu'),
-    MaxPooling2D(pool_size=(2, 2)),
-    BatchNormalization(),
-
-    Flatten(),
-    Dense(128, activation='relu'),
-    Dropout(0.5),
-    Dense(len(categories), activation='softmax')  # 4 classes
-])
-
-# Compile model
-model.compile(
-    optimizer=Adam(),
-    loss='categorical_crossentropy',
-    metrics=['accuracy']
-)
-
-class LearningRateLogger(tf.keras.callbacks.Callback):
-    def on_epoch_end(self, epoch, logs=None):
-        logs = logs or {}
-        lr = self.model.optimizer.learning_rate
-        # Check if it's a schedule (e.g. with ReduceLROnPlateau) or a float
-        if hasattr(lr, 'numpy'):
-            logs['learning_rate'] = lr.numpy()
-        else:
-            logs['learning_rate'] = tf.keras.backend.eval(lr)
+# # Prepare training data by random shuffling, batching into groups of 32, and prefetching the batches for performacne
+# train_ds = create_dataset(train_df).shuffle(1000).batch(32).prefetch(tf.data.AUTOTUNE)
+# # Create and prepare validation dataset with no shuffling, to preserve the evaluation considency. 
+# val_ds = create_dataset(val_df).batch(32).prefetch(tf.data.AUTOTUNE)
 
 
-# Train
-history = model.fit(
-    train_ds,
-    validation_data=val_ds,
-    epochs=15,
-    callbacks=[
-        EarlyStopping(patience=3, restore_best_weights=True),
-        ReduceLROnPlateau(patience=2),
-        LearningRateLogger()
-    ]
-)
+
+# # Model Architecture
+# model = Sequential([
+#     Conv2D(32, (3, 3), activation='relu', input_shape=(75, 75, 3)),
+#     MaxPooling2D(pool_size=(2, 2)),
+#     BatchNormalization(),
+
+#     Conv2D(64, (3, 3), activation='relu'),
+#     MaxPooling2D(pool_size=(2, 2)),
+#     BatchNormalization(),
+
+#     Conv2D(128, (3, 3), activation='relu'),
+#     MaxPooling2D(pool_size=(2, 2)),
+#     BatchNormalization(),
+
+#     Flatten(),
+#     Dense(128, activation='relu'),
+#     Dropout(0.5),
+#     Dense(len(categories), activation='softmax')  # 4 classes
+# ])
+
+# # Compile model
+# model.compile(
+#     optimizer=Adam(),
+#     loss='categorical_crossentropy',
+#     metrics=['accuracy']
+# )
+
+# class LearningRateLogger(tf.keras.callbacks.Callback):
+#     def on_epoch_end(self, epoch, logs=None):
+#         logs = logs or {}
+#         lr = self.model.optimizer.learning_rate
+#         # Check if it's a schedule (e.g. with ReduceLROnPlateau) or a float
+#         if hasattr(lr, 'numpy'):
+#             logs['learning_rate'] = lr.numpy()
+#         else:
+#             logs['learning_rate'] = tf.keras.backend.eval(lr)
 
 
-# Save the trained model
-model.save('trained_model.keras')
+# # Train
+# history = model.fit(
+#     train_ds,
+#     validation_data=val_ds,
+#     epochs=15,
+#     callbacks=[
+#         EarlyStopping(patience=3, restore_best_weights=True),
+#         ReduceLROnPlateau(patience=2),
+#         LearningRateLogger()
+#     ]
+# )
 
-# Save the training history to CSV
-history_df = pd.DataFrame(history.history)
-history_df.to_csv('training_history.csv', index=False)
+
+# # Save the trained model
+# model.save('trained_model.keras')
+
+# # Save the training history to CSV
+# history_df = pd.DataFrame(history.history)
+# history_df.to_csv('training_history.csv', index=False)
 
 
-# Plot training & validation accuracy values
-plt.figure(figsize=(12, 5))
+# # Plot training & validation accuracy values
+# plt.figure(figsize=(12, 5))
 
-plt.subplot(1, 2, 1)
-plt.plot(history.history['accuracy'], label='Train Accuracy')
-plt.plot(history.history['val_accuracy'], label='Val Accuracy')
-plt.title('Model Accuracy')
-plt.xlabel('Epoch')
-plt.ylabel('Accuracy')
-plt.legend()
+# plt.subplot(1, 2, 1)
+# plt.plot(history.history['accuracy'], label='Train Accuracy')
+# plt.plot(history.history['val_accuracy'], label='Val Accuracy')
+# plt.title('Model Accuracy')
+# plt.xlabel('Epoch')
+# plt.ylabel('Accuracy')
+# plt.legend()
 
-# Plot training & validation loss values
-plt.subplot(1, 2, 2)
-plt.plot(history.history['loss'], label='Train Loss')
-plt.plot(history.history['val_loss'], label='Val Loss')
-plt.title('Model Loss')
-plt.xlabel('Epoch')
-plt.ylabel('Loss')
-plt.legend()
+# # Plot training & validation loss values
+# plt.subplot(1, 2, 2)
+# plt.plot(history.history['loss'], label='Train Loss')
+# plt.plot(history.history['val_loss'], label='Val Loss')
+# plt.title('Model Loss')
+# plt.xlabel('Epoch')
+# plt.ylabel('Loss')
+# plt.legend()
 
-plt.tight_layout()
-plt.show()
+# plt.tight_layout()
+# plt.show()
 
 
 
