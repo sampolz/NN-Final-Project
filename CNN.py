@@ -146,7 +146,7 @@ class LearningRateLogger(tf.keras.callbacks.Callback):
 history = model.fit(
     train_ds,
     validation_data=val_ds,
-    epochs=15,
+    epochs=10,
     callbacks=[
         EarlyStopping(patience=3, restore_best_weights=True),
         ReduceLROnPlateau(patience=2),
