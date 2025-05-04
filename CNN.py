@@ -131,6 +131,17 @@ model.compile(
     metrics=['accuracy']
 )
 
+class LearningRateLogger(tf.keras.callbacks.Callback):
+    def on_epoch_end(self, epoch, logs=None):
+        logs = logs or {}
+        lr = self.model.optimizer.learning_rate
+        # Check if it's a schedule (e.g. with ReduceLROnPlateau) or a float
+        if hasattr(lr, 'numpy'):
+            logs['learning_rate'] = lr.numpy()
+        else:
+            logs['learning_rate'] = tf.keras.backend.eval(lr)
+
+
 # Train
 history = model.fit(
     train_ds,
@@ -138,9 +149,43 @@ history = model.fit(
     epochs=15,
     callbacks=[
         EarlyStopping(patience=3, restore_best_weights=True),
-        ReduceLROnPlateau(patience=2)
+        ReduceLROnPlateau(patience=2),
+        LearningRateLogger()
     ]
 )
+
+
+# Save the trained model
+model.save('trained_model.keras')
+
+# Save the training history to CSV
+history_df = pd.DataFrame(history.history)
+history_df.to_csv('training_history.csv', index=False)
+
+
+# Plot training & validation accuracy values
+plt.figure(figsize=(12, 5))
+
+plt.subplot(1, 2, 1)
+plt.plot(history.history['accuracy'], label='Train Accuracy')
+plt.plot(history.history['val_accuracy'], label='Val Accuracy')
+plt.title('Model Accuracy')
+plt.xlabel('Epoch')
+plt.ylabel('Accuracy')
+plt.legend()
+
+# Plot training & validation loss values
+plt.subplot(1, 2, 2)
+plt.plot(history.history['loss'], label='Train Loss')
+plt.plot(history.history['val_loss'], label='Val Loss')
+plt.title('Model Loss')
+plt.xlabel('Epoch')
+plt.ylabel('Loss')
+plt.legend()
+
+plt.tight_layout()
+plt.show()
+
 
 
 
