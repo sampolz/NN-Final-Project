@@ -2,7 +2,7 @@
 Title:
 Seeing the Earth from Above: Teaching Computers to Understand Satellite Images
 
-By: 
+By:   
     Jack Beneigh: Bucknell University Junior Computer Science Engineering Major  
     Jonas Scott: Bucknell University Junior Computer Science Engineering Major  
     Sam Polakov: Colby College Junior Computer Science: Artificial Engineering Major  
@@ -60,7 +60,7 @@ ModelLossEp.png Code:
     plt.legend()
 
 
-#Model Loss Plot
+    #Model Loss Plot
 
     plt.subplot(1, 2, 2)
     plt.plot(history.history['loss'], label='Train Loss')
