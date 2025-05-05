@@ -120,7 +120,7 @@ model = Sequential([
 
     Flatten(),
     Dense(128, activation='relu'),
-    Dropout(0.5),
+    Dropout(0.3),
     Dense(len(categories), activation='softmax')  # 4 classes
 ])
 
@@ -146,7 +146,7 @@ class LearningRateLogger(tf.keras.callbacks.Callback):
 history = model.fit(
     train_ds,
     validation_data=val_ds,
-    epochs=20,
+    epochs=15,
     callbacks=[
         EarlyStopping(patience=3, restore_best_weights=True),
         ReduceLROnPlateau(patience=2),
