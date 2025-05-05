@@ -146,7 +146,7 @@ class LearningRateLogger(tf.keras.callbacks.Callback):
 history = model.fit(
     train_ds,
     validation_data=val_ds,
-    epochs=11,
+    epochs=20,
     callbacks=[
         EarlyStopping(patience=3, restore_best_weights=True),
         ReduceLROnPlateau(patience=2),
@@ -163,7 +163,7 @@ history_df = pd.DataFrame(history.history)
 history_df.to_csv('training_history.csv', index=False)
 
 
-# Plot training & validation accuracy values
+# Model Accuracy Plot
 plt.figure(figsize=(12, 5))
 
 plt.subplot(1, 2, 1)
@@ -174,7 +174,8 @@ plt.xlabel('Epoch')
 plt.ylabel('Accuracy')
 plt.legend()
 
-# Plot training & validation loss values
+
+# Model Loss Plot
 plt.subplot(1, 2, 2)
 plt.plot(history.history['loss'], label='Train Loss')
 plt.plot(history.history['val_loss'], label='Val Loss')
@@ -182,10 +183,10 @@ plt.title('Model Loss')
 plt.xlabel('Epoch')
 plt.ylabel('Loss')
 plt.legend()
-
 plt.tight_layout()
 plt.show()
 
+#Learning Rate Graph
 plt.plot(history.history['learning_rate'])
 plt.title('Learning Rate Over Epochs')
 plt.xlabel('Epoch')
@@ -197,7 +198,7 @@ y_true = val_df['label_idx'].values
 y_pred_probs = model.predict(val_ds)
 y_pred = np.argmax(y_pred_probs, axis=1)
 
-# Confusion Matrix
+# Confusion Matrix Plot
 cm = confusion_matrix(y_true, y_pred)
 plt.figure(figsize=(8, 6))
 sns.heatmap(cm, annot=True, fmt='d', cmap='Blues', xticklabels=categories, yticklabels=categories)
@@ -211,6 +212,7 @@ report_df = pd.DataFrame(report).transpose()
 print(report_df)
 report_df.to_csv('classification_report.csv')  # Optional: save as table
 
+#Per Class Accuracy Plot
 class_accuracies = cm.diagonal() / cm.sum(axis=1)
 plt.bar(categories, class_accuracies)
 plt.title('Per-Class Accuracy')
